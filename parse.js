@@ -103,7 +103,6 @@ module.exports = function parseEvents(events) {
             ...e,
             blockNumber: event.blockNumber,
             txHash: event.transactionHash,
-            address: event.address
         }
     }).filter(e=>e)  //filter out undefined (unknown) events
 }
