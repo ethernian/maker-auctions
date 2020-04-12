@@ -22,12 +22,13 @@ function parseFlipEvent(event) {
             tab: event.returnValues.tab / 10 ** 27 / 10 ** 18,
         }
     } else if (event.raw.topics[0] === TEND) {
-        console.log(event.returnValues)
+        let raw = event.raw.data.slice(289, -248)
         return {
             type: "TEND",
             flipId: parseInt(event.raw.topics[2], 16),
-            lot: event.returnValues.lot / 10 ** 18,
-            tab: event.returnValues.tab / 10 ** 27 / 10 ** 18,
+            lot: parseInt(event.raw.topics[3], 16) / 10 ** 18,
+            raw: raw,
+            bid: parseInt(raw, 16) / 10 ** 27 / 10 ** 18,
         }
     } else if (event.raw.topics[0] === DENT) {
         let raw = event.raw.data.slice(289, -248)

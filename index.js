@@ -11,5 +11,4 @@ const FLIPPER_EVENTS_FILE = 'data/flip-events.json'
 const flipperRawEvents = JSON.parse( fs.readFileSync(FLIPPER_EVENTS_RAW_FILE) )
 const flipperEvents = parseEvents(flipperRawEvents)
 fs.writeFileSync(FLIPPER_EVENTS_FILE, JSON.stringify(flipperEvents, null, 4))
-//console.log(flipperEvents)
 console.log('DONE: FLIPPER events parsed and saved: ',flipperEvents.length)
