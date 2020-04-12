@@ -8,7 +8,8 @@ const CAT_ABI = require('./abis/cat-abi')
 
 const FLIPPER_EVENTS_RAW_FILE = 'data/flip-events-raw.json'
 const OSMPRICE_EVENTS_RAW_FILE = 'data/osm-events-raw.json'
-const BLOCK_INFO_FILE = 'data/blockInfo.json'
+const BLOCK_INFO_FILE = 'data/block-info.json'
+const TX_INFO_FILE = 'data/tx-info.json'
 
 const FLIPPER_START_BLOCK = 8800000
 
@@ -118,16 +119,47 @@ async function fetchOsmPriceFeed(startingBlock) {
 
 // Get the price in the given block number and populate last price global variable
 async function fetchBlockInfo() {
-    let block = await web3.eth.getBlock(9838165)
     let blockNumbers = flipperEvents.map(e=>e.blockNumber)
     let uniqs = [...new Set(blockNumbers)]
-    console.log('blockNrs: ', blockNumbers.length, 'uniqs: ',uniqs.length)
+    let blocks = []
+    if (fs.existsSync(BLOCK_INFO_FILE)) {
+        console.log('\nLoading existing blocks from file', BLOCK_INFO_FILE)
+        blocks = JSON.parse(fs.readFileSync(BLOCK_INFO_FILE))
+        console.log('', blocks.length, ' existing blocks were loaded')
+        let blockMap = blocks.reduce((blockMap,block) => ((blockMap[block.number]=block),blockMap),{});
+        uniqs = uniqs.filter(blockNr=> !blockMap[blockNr])
+    }
+    console.log('blockNrs: ', blockNumbers.length, 'uniqs: ',uniqs.length, 'already loaded:',blocks.length)
     let p_blocks = uniqs.map(blockNr => web3.eth.getBlock(blockNr))
-    console.log(p_blocks)
-    let blocks = await Promise.all(p_blocks)
+    blocks = [...blocks, ...await Promise.all(p_blocks)]
     fs.writeFileSync(BLOCK_INFO_FILE, JSON.stringify(blocks, null, 4))
     console.log(" ", blockNumbers.length,"blocks were saved to the file ", BLOCK_INFO_FILE)
 }
+
+// Get event tx info
+async function fetchTransactionInfo() {
+    let txIds = flipperEvents.map(e=>e.transactionHash)
+    let uniqs = [...new Set(txIds)]
+    let txs = []
+    if (fs.existsSync(TX_INFO_FILE)) {
+        console.log('\nLoading existing transactions from file', TX_INFO_FILE)
+        txs = JSON.parse(fs.readFileSync(TX_INFO_FILE))
+        console.log('', txs.length, ' existing transactions were loaded')
+        let txMap = txs.reduce((arr,tx) => ((arr[tx.hash]=tx),arr),{});
+        uniqs = uniqs.filter(txid=> !txMap[txid])
+    }
+    console.log('start fetching', uniqs.length, 'new transactions. It can take long time')
+    txs.push(... await Promise.all(
+        uniqs.map(async (txId, n) => {
+            let tx = await web3.eth.getTransaction(txId).then(tx=>tx)
+            if (n%100==0) console.log("tx", n+1,"of", uniqs.length)
+            return tx
+        })
+    ))
+    fs.writeFileSync(TX_INFO_FILE, JSON.stringify(txs, null, 4))
+    console.log(" ", txs.length,"transaction info was saved to the file ", TX_INFO_FILE)
+}
+
 
 (async function() {
     lastBlockNr = await web3.eth.getBlockNumber()
@@ -136,6 +168,7 @@ async function fetchBlockInfo() {
     await fetchFlipperFeed(latestFetchedBlock)
     await fetchBlockInfo()
     await fetchOsmPriceFeed(FLIPPER_START_BLOCK) 
+    await fetchTransactionInfo()
     provider.disconnect()
     console.log('DONE!')
 })()
