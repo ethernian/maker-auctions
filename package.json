@@ -1,0 +1,16 @@
+{
+  "name": "maker-auctions",
+  "version": "1.0.0",
+  "description": "fetch maker auctions data",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "fetch": "node fetch.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "web3": "^1.2.6"
+  }
+}
