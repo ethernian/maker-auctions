@@ -167,7 +167,7 @@ async function fetchTransactionInfo() {
     let latestFetchedBlock = readFetchedFlipEvents()
     await fetchFlipperFeed(latestFetchedBlock)
     await fetchBlockInfo()
-    await fetchOsmPriceFeed(FLIPPER_START_BLOCK) 
+    await fetchOsmPriceFeed(FLIPPER_START_BLOCK-100000) //trying to find 1st osm event before flipper start
     await fetchTransactionInfo()
     provider.disconnect()
     console.log('DONE!')

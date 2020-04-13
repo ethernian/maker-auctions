@@ -96,13 +96,23 @@ function parseFlipEvent(event) {
     }
 }
 
-module.exports = function parseEvents(events) {
-    return events.map((event, i) => {
-        let e = parseFlipEvent(event)
-        if (e) return {
-            ...e,
-            blockNumber: event.blockNumber,
-            txHash: event.transactionHash,
+const web3 = new require('web3')
+module.exports = {
+    parseFlipEvents: function (events) {
+        return events.map((event, i) => {
+            let e = parseFlipEvent(event)
+            if (e) return {
+                ...e,
+                blockNumber: event.blockNumber,
+                txHash: event.transactionHash,
+            }
+        }).filter(e=>e)  //filter out undefined (unknown) events
+    },
+    parseOsmEvent : function (osmEvent) {
+        var priceInWei = web3.utils.toBN(osmEvent.returnValues[0])
+        return {
+            blockNumber: osmEvent.blockNumber,
+            price: web3.utils.fromWei(priceInWei)
         }
-    }).filter(e=>e)  //filter out undefined (unknown) events
+    }
 }
