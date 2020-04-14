@@ -24,7 +24,8 @@ function estimatePrice(blockNumber, osmPriceFeed) {
         return osmPriceFeed[osmPriceFeed.length-1].price
     } else {
         let k = (blockNumber - osmPriceFeed[p-1].blockNumber) / (osmPriceFeed[p].blockNumber - osmPriceFeed[p-1].blockNumber)
-        return osmPriceFeed[p-1].price + k * (osmPriceFeed[p].price - osmPriceFeed[p-1].price)
+        let price  =  parseFloat(osmPriceFeed[p-1].price) + k * (osmPriceFeed[p].price - osmPriceFeed[p-1].price)
+        return price
     }
 }
 
