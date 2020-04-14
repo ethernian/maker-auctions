@@ -49,7 +49,7 @@ const allFlipperEvents = flipperEvents.map(e=>({
     ...e,
     ...txInfo[e.txHash], 
     ...blockInfo[e.blockNumber],
-    market_price: estimatePrice(e.blockNumber, osmPriceFeed)
+    marketPrice: estimatePrice(e.blockNumber, osmPriceFeed)
 }))
 
 fs.writeFileSync(RESULT_FILE, JSON.stringify(allFlipperEvents, null, 4))
@@ -65,7 +65,7 @@ allFlipperEvents.forEach(e=> {
             timestamp: e.timestamp,
             datetime: new Date(e.timestamp * 1000),
             blockNumber: e.blockNumber,
-            market_price: e.market_price,
+            marketPrice: e.marketPrice,
             state: "CLOSED"
         }
     } else {
@@ -78,21 +78,25 @@ allFlipperEvents.forEach(e=> {
             let best_price = auction.best_price
             if (!best_price || best_price < bid_price) { 
                 auction.best_price = bid_price
+                auction.marketPrice = e.marketPrice
+                auction.lot = e.lot
+                auction.last_bid_timestamp = e.timestamp
+                auction.last_bid_datetime = new Date(e.timestamp * 1000)
+                auction.last_bid_blockNumber = e.blockNumber
+                auction.bidCount = (auction.bidCount || 0 )  + 1  
+                auction.state == "RUNNING"
+            } else if (e.blockNumber >= auction.blockNumber) {
+                throw new Error(' later bid has lowered the price!')
+            } else {
+                // earlier bids with lower price got processed later - just ignore them
             }
-
-            auction.state == "RUNNING"
-            auction.market_price = e.market_price
-            auction.lot = e.lot
-            auction.timestamp = e.timestamp
-            auction.datetime = new Date(e.timestamp * 1000)
-            auction.blockNumber = e.blockNumber
-        }
+    }
     }
 })
 
 Object.values(auctions).map(auction=>{
-    auction.profit = auction.market_price - auction.best_price
-    auction.profit_ratio = auction.profit / auction.market_price
+    auction.profit = auction.marketPrice - auction.best_price
+    auction.profit_ratio = auction.profit / auction.marketPrice
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
