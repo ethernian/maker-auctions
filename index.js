@@ -63,6 +63,7 @@ allFlipperEvents.forEach(e=> {
             ... auctions[e.flipId],
             gasPrice: e.gasPrice,
             timestamp: e.timestamp,
+            datetime: new Date(e.timestamp * 1000),
             market_price: e.market_price
         }
     } else {
