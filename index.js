@@ -4,7 +4,7 @@ const fs = require('fs')
 const { parseFlipEvents, parseOsmEvent } = require('./parse')
 
 const FLIPPER_EVENTS_RAW_FILE = 'data/flip-events-raw.json'
-const FLIPPER_EVENTS_FILE = 'data/flip-events.json'
+const AUCTIONS_FILE = 'data/auctions.json'
 const RESULT_FILE = 'data/flip-events-RESULT.json'
 const OSMPRICE_EVENTS_RAW_FILE = 'data/osm-events-raw.json'
 const BLOCK_INFO_FILE = 'data/block-info.json'
@@ -44,12 +44,37 @@ const osmPriceFeed = JSON.parse ( fs.readFileSync(OSMPRICE_EVENTS_RAW_FILE) )
     .filter(e=> e.price > 0) //filter out zero price elements
     .sort((a, b) => a.blockNumber - b.blockNumber)
 
-const result = flipperEvents.map(e=>({
+const allFlipperEvents = flipperEvents.map(e=>({
     ...e,
     ...txInfo[e.txHash], 
     ...blockInfo[e.blockNumber],
-    price: estimatePrice(e.blockNumber, osmPriceFeed)
-}))    
+    market_price: estimatePrice(e.blockNumber, osmPriceFeed)
+}))
 
-fs.writeFileSync(RESULT_FILE, JSON.stringify(result, null, 4))
-console.log('DONE: ',result.length,'FLIPPER RESULT events parsed and saved into: ', RESULT_FILE)
+fs.writeFileSync(RESULT_FILE, JSON.stringify(allFlipperEvents, null, 4))
+console.log('DONE: ',allFlipperEvents.length,'FLIPPER RESULT events parsed and saved into: ', RESULT_FILE)
+
+const auctions = {}
+allFlipperEvents.forEach(e=> {
+    if (e.flipId && !auctions[e.flipId]) auctions[e.flipId] = {}
+    if (e.type == "DEAL") {
+        auctions[e.flipId] = { 
+            ... auctions[e.flipId],
+            gasPrice: e.gasPrice,
+            timestamp: e.timestamp,
+            market_price: e.market_price
+        }
+    } else {
+        if (e.type == "TEND" || e.type == "DENT") {
+            let auction = auctions[e.flipId]
+            let bid_price = e.bid / e.lot
+            let best_price = auction.best_price
+            if (!best_price || best_price < bid_price) { 
+                auction.best_price = bid_price
+            }
+            auction.lot = e.lot
+        }
+    }
+})
+
+fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
