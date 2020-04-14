@@ -65,8 +65,9 @@ allFlipperEvents.forEach(e=> {
             timestamp: e.timestamp,
             datetime: new Date(e.timestamp * 1000),
             blockNumber: e.blockNumber,
-            last_bid_blocks_before:  auctions[e.flipId].last_bid_blockNumber - e.blockNumber,
+            lastbid_blocks_before:  auctions[e.flipId].lastbid_blockNumber - e.blockNumber,
             marketPrice: e.marketPrice,
+            txCost:  e.marketPrice * 51285 / 10 ** 9 * e.gasPrice / 10 ** 9, 
             state: "CLOSED"
         }
     } else {
@@ -81,10 +82,12 @@ allFlipperEvents.forEach(e=> {
                 auction.best_price = bid_price
                 auction.marketPrice = e.marketPrice
                 auction.lot = e.lot
-                auction.last_bid_timestamp = e.timestamp
-                auction.last_bid_datetime = new Date(e.timestamp * 1000)
-                auction.last_bid_blockNumber = e.blockNumber
-                auction.bidCount = (auction.bidCount || 0 )  + 1  
+                auction.lastbid_timestamp = e.timestamp
+                auction.lastbid_datetime = new Date(e.timestamp * 1000)
+                auction.lastbid_blockNumber = e.blockNumber
+                auction.bidCount = (auction.bidCount || 0 )  + 1
+                auction.lastbid_txHash = e.txHash  
+                auction.lastbid_txCost_USD = e.marketPrice * 99657 / 10 ** 9 * e.gasPrice / 10 ** 9, 
                 auction.state == "RUNNING"
             } else if (e.blockNumber >= auction.blockNumber) {
                 throw new Error(' later bid has lowered the price!')
