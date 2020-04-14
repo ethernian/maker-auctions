@@ -65,6 +65,7 @@ allFlipperEvents.forEach(e=> {
             timestamp: e.timestamp,
             datetime: new Date(e.timestamp * 1000),
             blockNumber: e.blockNumber,
+            last_bid_blocks_before:  auctions[e.flipId].last_bid_blockNumber - e.blockNumber,
             marketPrice: e.marketPrice,
             state: "CLOSED"
         }
