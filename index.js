@@ -104,3 +104,31 @@ Object.values(auctions).map(auction=>{
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
+
+const { parse } = require('json2csv');
+const fields = [
+    "state",
+    "best_price",
+    "marketPrice",
+    "lot",
+    "lastbid_timestamp",
+    "lastbid_datetime", 
+    "lastbid_blockNumber", 
+    "bidCount",
+    "lastbid_txHash",
+    "lastbid_txCost_USD",
+    "gasPrice_GWei",
+    "timestamp",
+    "datetime",
+    "blockNumber",
+    "lastbid_blocks_before",
+    "txCost",
+    "profit",
+    "profit_ratio",
+]
+const csv = Object.keys(auctions).map(id=>({
+    "id" : id,
+    ... auctions[id]
+}))
+const csvData = parse(csv, fields);
+fs.writeFileSync(AUCTIONS_FILE.replace('json','csv'), csvData)
