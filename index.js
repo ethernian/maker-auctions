@@ -61,7 +61,7 @@ allFlipperEvents.forEach(e=> {
     if (e.type == "DEAL") {
         auctions[e.flipId] = { 
             ... auctions[e.flipId],
-            gasPrice: e.gasPrice,
+            gasPrice_GWei: e.gasPrice / 10 ** 9,
             timestamp: e.timestamp,
             datetime: new Date(e.timestamp * 1000),
             blockNumber: e.blockNumber,
