@@ -64,18 +64,28 @@ allFlipperEvents.forEach(e=> {
             gasPrice: e.gasPrice,
             timestamp: e.timestamp,
             datetime: new Date(e.timestamp * 1000),
+            blockNumber: e.blockNumber,
             market_price: e.market_price,
+            state: "CLOSED"
         }
     } else {
         if (e.type == "TEND" || e.type == "DENT") {
             let auction = auctions[e.flipId]
+            if (auction.state == "CLOSED") {
+                throw new Error('DENT/TEND to closed auction')
+            }
             let bid_price = e.bid / e.lot
             let best_price = auction.best_price
             if (!best_price || best_price < bid_price) { 
                 auction.best_price = bid_price
             }
+
+            auction.state == "RUNNING"
             auction.market_price = e.market_price
             auction.lot = e.lot
+            auction.timestamp = e.timestamp
+            auction.datetime = new Date(e.timestamp * 1000)
+            auction.blockNumber = e.blockNumber
         }
     }
 })
