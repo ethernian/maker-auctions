@@ -74,11 +74,15 @@ allFlipperEvents.forEach(e=> {
             if (!best_price || best_price < bid_price) { 
                 auction.best_price = bid_price
             }
+            auction.market_price = e.market_price
             auction.lot = e.lot
-            auction.profit = best_price - auction.market_price
-            auction.profit_ratio = auction.profit / auction.market_price
         }
     }
+})
+
+Object.values(auctions).map(auction=>{
+    auction.profit = auction.market_price - auction.best_price
+    auction.profit_ratio = auction.profit / auction.market_price
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
