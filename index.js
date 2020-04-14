@@ -64,7 +64,7 @@ allFlipperEvents.forEach(e=> {
             gasPrice: e.gasPrice,
             timestamp: e.timestamp,
             datetime: new Date(e.timestamp * 1000),
-            market_price: e.market_price
+            market_price: e.market_price,
         }
     } else {
         if (e.type == "TEND" || e.type == "DENT") {
@@ -75,6 +75,8 @@ allFlipperEvents.forEach(e=> {
                 auction.best_price = bid_price
             }
             auction.lot = e.lot
+            auction.profit = best_price - auction.market_price
+            auction.profit_ratio = auction.profit / auction.market_price
         }
     }
 })
