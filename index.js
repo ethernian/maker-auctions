@@ -1,7 +1,7 @@
 "use strict"
 
 const fs = require('fs')
-const { parseFlipEvents, parseOsmEvent } = require('./parse')
+const { parseFlipEvents, parseOsmEvent, parseGQLPriceFeed } = require('./parse')
 
 const FLIPPER_EVENTS_RAW_FILE = 'data/flip-events-raw.json'
 const AUCTIONS_FILE = 'data/auctions.json'
@@ -9,6 +9,14 @@ const RESULT_FILE = 'data/flip-events-RESULT.json'
 const OSMPRICE_EVENTS_RAW_FILE = 'data/osm-events-raw.json'
 const BLOCK_INFO_FILE = 'data/block-info.json'
 const TX_INFO_FILE = 'data/tx-info.json'
+const ETHUSD_GQL_PRICEFEED_FILES = [
+    "data_feeds/ethusd-pricefeed-santiment-201911.gql",
+    "data_feeds/ethusd-pricefeed-santiment-201912.gql",
+    "data_feeds/ethusd-pricefeed-santiment-202001.gql",
+    "data_feeds/ethusd-pricefeed-santiment-202002.gql",
+    "data_feeds/ethusd-pricefeed-santiment-202003.gql",
+    "data_feeds/ethusd-pricefeed-santiment-202004up13.gql"
+]
 
 
 // Get instance of contracts
@@ -26,6 +34,18 @@ function estimatePrice(blockNumber, osmPriceFeed) {
         let k = (blockNumber - osmPriceFeed[p-1].blockNumber) / (osmPriceFeed[p].blockNumber - osmPriceFeed[p-1].blockNumber)
         let price  =  parseFloat(osmPriceFeed[p-1].price) + k * (osmPriceFeed[p].price - osmPriceFeed[p-1].price)
         return price
+    }
+}
+
+function interpolate(priceFeed, p0, field1, field2) {
+    let idx = priceFeed.findIndex(e=>e[field1]>p0)
+    if (idx == 0) {
+        return priceFeed[0][field2]
+    } if (idx == -1) {
+        return priceFeed[priceFeed.length-1][field2]
+    } else {
+        let k = (p0 - priceFeed[idx-1][field1]) / (priceFeed[idx][field1] - priceFeed[idx-1][field1])
+        return  parseFloat(priceFeed[idx-1][field2]) + k * (priceFeed[idx][field2] - priceFeed[idx-1][field2])
     }
 }
 
@@ -79,8 +99,8 @@ allFlipperEvents.forEach(e=> {
             let bid_price = e.bid / e.lot
             let best_price = auction.best_price
             if (!best_price || best_price < bid_price) { 
-                auction.best_price = bid_price
-                auction.marketPrice = e.marketPrice
+                auction.best_price_ethdai = bid_price
+                auction.market_price_ethdai = e.marketPrice
                 auction.lot = e.lot
                 auction.lastbid_timestamp = e.timestamp
                 auction.lastbid_datetime = new Date(e.timestamp * 1000)
@@ -98,9 +118,12 @@ allFlipperEvents.forEach(e=> {
     }
 })
 
+let ethusd_feed = parseGQLPriceFeed(ETHUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse(fs.readFileSync(f))))
+
 Object.values(auctions).map(auction=>{
-    auction.profit = auction.marketPrice - auction.best_price
-    auction.profit_ratio = auction.profit / auction.marketPrice
+    auction.profit = auction.market_price_ethdai - auction.best_price_ethdai
+    auction.profit_ratio = auction.profit / auction.market_price_ethdai
+    auction.san_price_ethusd = interpolate(ethusd_feed, auction.timestamp, "timestamp", "value")
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
