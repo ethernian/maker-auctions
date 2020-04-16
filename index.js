@@ -9,6 +9,14 @@ const RESULT_FILE = 'data/flip-events-RESULT.json'
 const OSMPRICE_EVENTS_RAW_FILE = 'data/osm-events-raw.json'
 const BLOCK_INFO_FILE = 'data/block-info.json'
 const TX_INFO_FILE = 'data/tx-info.json'
+const DAIUSD_GQL_PRICEFEED_FILES = [
+    "data_feeds/daiusd-pricefeed-santiment-201911.json",
+    "data_feeds/daiusd-pricefeed-santiment-201912.json",
+    "data_feeds/daiusd-pricefeed-santiment-202001.json",
+    "data_feeds/daiusd-pricefeed-santiment-202002.json",
+    "data_feeds/daiusd-pricefeed-santiment-202003.json",
+    "data_feeds/daiusd-pricefeed-santiment-202004up15.json"
+]
 const ETHUSD_GQL_PRICEFEED_FILES = [
     "data_feeds/ethusd-pricefeed-santiment-201911.gql",
     "data_feeds/ethusd-pricefeed-santiment-201912.gql",
@@ -119,11 +127,13 @@ allFlipperEvents.forEach(e=> {
 })
 
 let ethusd_feed = parseGQLPriceFeed(ETHUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse(fs.readFileSync(f))))
+let daiusd_feed = parseGQLPriceFeed(DAIUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse(fs.readFileSync(f))))
 
 Object.values(auctions).map(auction=>{
     auction.profit = auction.market_price_ethdai - auction.best_price_ethdai
     auction.profit_ratio = auction.profit / auction.market_price_ethdai
     auction.san_price_ethusd = interpolate(ethusd_feed, auction.timestamp, "timestamp", "value")
+    auction.dai_price_ethusd = interpolate(daiusd_feed, auction.timestamp, "timestamp", "value")
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
