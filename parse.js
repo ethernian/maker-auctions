@@ -114,5 +114,14 @@ module.exports = {
             blockNumber: osmEvent.blockNumber,
             price: web3.utils.fromWei(priceInWei)
         }
+    },
+    parseGQLPriceFeed : function (feed_chunks) {
+        let combined = feed_chunks.map(chunk=>chunk.data.getMetric.timeseriesData)
+            .reduce((feed,chunk)=>(feed.push(...chunk),feed),[])
+            .map(e=>({
+                ...e,
+                timestamp: new Date(e.datetime).getTime() / 1000 
+            }))
+        return combined
     }
 }
