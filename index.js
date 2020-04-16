@@ -77,16 +77,17 @@ const allFlipperEvents = flipperEvents.map(e=>({
     ...e,
     ...txInfo[e.txHash], 
     ...blockInfo[e.blockNumber],
-    market_price: estimatePrice(e.blockNumber, osmPriceFeed)
+    osm_price_ethusd: estimatePrice(e.blockNumber, osmPriceFeed)
 }))
+
 
 fs.writeFileSync(RESULT_FILE, JSON.stringify(allFlipperEvents, null, 4))
 console.log('DONE: ',allFlipperEvents.length,'FLIPPER RESULT events parsed and saved into: ', RESULT_FILE)
 
 const auctions = {}
 allFlipperEvents.forEach(e=> {
-    if (e.flipId && !auctions[e.flipId]) auctions[e.flipId] = {}
-    if (e.type == "DEAL") {
+    if (e.flipId && !auctions[e.flipId]) auctions[e.flipId] = { id: e.flipId }
+  if (e.type == "DEAL") {
         auctions[e.flipId] = { 
             ... auctions[e.flipId],
             gasPrice_GWei: e.gasPrice / 10 ** 9,
@@ -94,8 +95,8 @@ allFlipperEvents.forEach(e=> {
             datetime: new Date(e.timestamp * 1000),
             blockNumber: e.blockNumber,
             lastbid_blocks_before:  auctions[e.flipId].lastbid_blockNumber - e.blockNumber,
-            market_price: e.market_price,
-            txCost:  e.market_price * 51285 / 10 ** 9 * e.gasPrice / 10 ** 9, 
+            osm_price_ethusd: e.osm_price_ethusd,
+            txCost:  e.osm_price_ethusd * 51285 / 10 ** 9 * e.gasPrice / 10 ** 9, 
             state: "CLOSED"
         }
     } else {
@@ -105,18 +106,19 @@ allFlipperEvents.forEach(e=> {
                 throw new Error('DENT/TEND to closed auction')
             }
             let bid_price = e.bid / e.lot
-            let best_price = auction.best_price
+            let best_price = auction.best_price_ethdai
             if (!best_price || best_price < bid_price) { 
+                auction.state == "RUNNING"
                 auction.best_price_ethdai = bid_price
-                auction.osm_price_ethusd = e.market_price
+                auction.lastbid_osm_price_ethusd = e.osm_price_ethusd
+                auction.osm_price_ethusd = e.osm_price_ethusd //WORKAROUND HACK
                 auction.lot = e.lot
                 auction.lastbid_timestamp = e.timestamp
                 auction.lastbid_datetime = new Date(e.timestamp * 1000)
                 auction.lastbid_blockNumber = e.blockNumber
                 auction.bidCount = (auction.bidCount || 0 )  + 1
                 auction.lastbid_txHash = e.txHash  
-                auction.lastbid_txCost_USD = e.market_price * 99657 / 10 ** 9 * e.gasPrice / 10 ** 9, 
-                auction.state == "RUNNING"
+                auction.lastbid_txCost_USD = e.osm_price_ethusd * 99657 / 10 ** 9 * e.gasPrice / 10 ** 9 
             } else if (e.blockNumber >= auction.blockNumber) {
                 throw new Error(' later bid has lowered the price!')
             } else {
@@ -130,10 +132,13 @@ let ethusd_feed = parseGQLPriceFeed(ETHUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse
 let daiusd_feed = parseGQLPriceFeed(DAIUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse(fs.readFileSync(f))))
 
 Object.values(auctions).map(auction=>{
-    auction.profit = auction.osm_price_ethusd - auction.best_price_ethdai
-    auction.profit_ratio = auction.profit / auction.osm_price_ethusd
     auction.san_price_ethusd = interpolate(ethusd_feed, auction.timestamp, "timestamp", "value")
     auction.san_price_daiusd = interpolate(daiusd_feed, auction.timestamp, "timestamp", "value")
+    auction.osm_profit = auction.osm_price_ethusd - auction.best_price_ethdai
+    auction.osm_profit_ratio = auction.osm_profit / auction.osm_price_ethusd
+    auction.san_profit = auction.san_price_ethusd - auction.best_price_ethdai
+    auction.san_profit_ratio = auction.san_profit / auction.san_price_ethusd
+    auction.sanosm_price_diff = Math.abs(auction.san_price_ethusd - auction.osm_price_ethusd)
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
@@ -142,7 +147,7 @@ const { parse } = require('json2csv');
 const fields = [
     "state",
     "best_price",
-    "market_price",
+    "osm_price_ethusd",
     "lot",
     "lastbid_timestamp",
     "lastbid_datetime", 
