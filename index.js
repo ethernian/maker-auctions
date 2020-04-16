@@ -77,7 +77,7 @@ const allFlipperEvents = flipperEvents.map(e=>({
     ...e,
     ...txInfo[e.txHash], 
     ...blockInfo[e.blockNumber],
-    marketPrice: estimatePrice(e.blockNumber, osmPriceFeed)
+    market_price: estimatePrice(e.blockNumber, osmPriceFeed)
 }))
 
 fs.writeFileSync(RESULT_FILE, JSON.stringify(allFlipperEvents, null, 4))
@@ -94,8 +94,8 @@ allFlipperEvents.forEach(e=> {
             datetime: new Date(e.timestamp * 1000),
             blockNumber: e.blockNumber,
             lastbid_blocks_before:  auctions[e.flipId].lastbid_blockNumber - e.blockNumber,
-            marketPrice: e.marketPrice,
-            txCost:  e.marketPrice * 51285 / 10 ** 9 * e.gasPrice / 10 ** 9, 
+            market_price: e.market_price,
+            txCost:  e.market_price * 51285 / 10 ** 9 * e.gasPrice / 10 ** 9, 
             state: "CLOSED"
         }
     } else {
@@ -108,14 +108,14 @@ allFlipperEvents.forEach(e=> {
             let best_price = auction.best_price
             if (!best_price || best_price < bid_price) { 
                 auction.best_price_ethdai = bid_price
-                auction.market_price_ethdai = e.marketPrice
+                auction.market_price_ethdai = e.market_price
                 auction.lot = e.lot
                 auction.lastbid_timestamp = e.timestamp
                 auction.lastbid_datetime = new Date(e.timestamp * 1000)
                 auction.lastbid_blockNumber = e.blockNumber
                 auction.bidCount = (auction.bidCount || 0 )  + 1
                 auction.lastbid_txHash = e.txHash  
-                auction.lastbid_txCost_USD = e.marketPrice * 99657 / 10 ** 9 * e.gasPrice / 10 ** 9, 
+                auction.lastbid_txCost_USD = e.market_price * 99657 / 10 ** 9 * e.gasPrice / 10 ** 9, 
                 auction.state == "RUNNING"
             } else if (e.blockNumber >= auction.blockNumber) {
                 throw new Error(' later bid has lowered the price!')
@@ -142,7 +142,7 @@ const { parse } = require('json2csv');
 const fields = [
     "state",
     "best_price",
-    "marketPrice",
+    "market_price",
     "lot",
     "lastbid_timestamp",
     "lastbid_datetime", 
