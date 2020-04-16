@@ -108,7 +108,7 @@ allFlipperEvents.forEach(e=> {
             let best_price = auction.best_price
             if (!best_price || best_price < bid_price) { 
                 auction.best_price_ethdai = bid_price
-                auction.market_price_ethdai = e.market_price
+                auction.osm_price_ethusd = e.market_price
                 auction.lot = e.lot
                 auction.lastbid_timestamp = e.timestamp
                 auction.lastbid_datetime = new Date(e.timestamp * 1000)
@@ -130,8 +130,8 @@ let ethusd_feed = parseGQLPriceFeed(ETHUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse
 let daiusd_feed = parseGQLPriceFeed(DAIUSD_GQL_PRICEFEED_FILES.map(f=>JSON.parse(fs.readFileSync(f))))
 
 Object.values(auctions).map(auction=>{
-    auction.profit = auction.market_price_ethdai - auction.best_price_ethdai
-    auction.profit_ratio = auction.profit / auction.market_price_ethdai
+    auction.profit = auction.osm_price_ethusd - auction.best_price_ethdai
+    auction.profit_ratio = auction.profit / auction.osm_price_ethusd
     auction.san_price_ethusd = interpolate(ethusd_feed, auction.timestamp, "timestamp", "value")
     auction.san_price_daiusd = interpolate(daiusd_feed, auction.timestamp, "timestamp", "value")
 })
