@@ -133,7 +133,7 @@ Object.values(auctions).map(auction=>{
     auction.profit = auction.market_price_ethdai - auction.best_price_ethdai
     auction.profit_ratio = auction.profit / auction.market_price_ethdai
     auction.san_price_ethusd = interpolate(ethusd_feed, auction.timestamp, "timestamp", "value")
-    auction.dai_price_ethusd = interpolate(daiusd_feed, auction.timestamp, "timestamp", "value")
+    auction.san_price_daiusd = interpolate(daiusd_feed, auction.timestamp, "timestamp", "value")
 })
 
 fs.writeFileSync(AUCTIONS_FILE, JSON.stringify(auctions, null, 4))
